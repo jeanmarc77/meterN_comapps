@@ -1,7 +1,7 @@
 #!/usr/bin/php
 <?php
 // A simple script to return peak power and lower power of the last 24h hours.
-// Set as indicator type
+// Use as indicator
 
 $MNDIR    = '/srv/http/metern'; // Path to meterN
 $METNUM   = 1; // live meter number to check
@@ -48,7 +48,7 @@ if (file_exists($LIVEMEMORY)) {
             echo "$INDID($ret*W)";
         }
         /*
-		if (date('H') == 0 && date('i') == 0) { // Midnight
+		if (date('H') == 0 && date('i') == 0) { // Clear at midnight
             $previous['max'] = $array["${'METNAME'.$METNUM}$METNUM"];
             $previous['low'] = $array["${'METNAME'.$METNUM}$METNUM"];
         }*/
@@ -60,7 +60,6 @@ if (file_exists($LIVEMEMORY)) {
 			$previous['tlow'] = $nowutc;
 			$previous['low'] = $array["${'METNAME'.$METNUM}$METNUM"];
 		}
-		
         $prevdata        = json_encode($previous);
         file_put_contents($prevfile, $prevdata);
     } else {
