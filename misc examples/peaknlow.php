@@ -1,6 +1,6 @@
 #!/usr/bin/php
 <?php
-// A simple script to return peak power and lower power of the day.
+// A simple script to return peak power and lower power of the last 24h hours.
 // Set as indicator type
 
 $MNDIR    = '/srv/http/metern'; // Path to meterN
@@ -35,20 +35,32 @@ if (file_exists($LIVEMEMORY)) {
         if ($argv[1] == '-peak') {
             if ($nowutc - $array['UTC'] < 5 && $array["${'METNAME'.$METNUM}$METNUM"] > $previous['max']) { // peak
                 $previous['max'] = $array["${'METNAME'.$METNUM}$METNUM"];
+				$previous['tmax'] = $nowutc;
             }
             $ret = $previous['max'];
             echo "$INDID($ret*W)";
         } elseif ($argv[1] == '-low') {
             if (($nowutc - $array['UTC'] < 5 && $array["${'METNAME'.$METNUM}$METNUM"] < $previous['low'] && $array["${'METNAME'.$METNUM}$METNUM"] > 0) || !isset($previous['low'])) { // low
                 $previous['low'] = $array["${'METNAME'.$METNUM}$METNUM"];
+				$previous['tlow'] = $nowutc;
             }
             $ret = $previous['low'];
             echo "$INDID($ret*W)";
         }
-        if (date('H') == 0 && date('i') == 0) { // Midnight
+        /*
+		if (date('H') == 0 && date('i') == 0) { // Midnight
             $previous['max'] = $array["${'METNAME'.$METNUM}$METNUM"];
             $previous['low'] = $array["${'METNAME'.$METNUM}$METNUM"];
-        }
+        }*/
+		if ($previous['tmax'] > $nowutc + 86400) { // Clear value over 24h
+			$previous['tmax'] = $nowutc;
+			$previous['max'] = $array["${'METNAME'.$METNUM}$METNUM"];
+		}
+		if ($previous['tlow'] > $nowutc + 86400) {
+			$previous['tlow'] = $nowutc;
+			$previous['low'] = $array["${'METNAME'.$METNUM}$METNUM"];
+		}
+		
         $prevdata        = json_encode($previous);
         file_put_contents($prevfile, $prevdata);
     } else {
