@@ -34,14 +34,14 @@ if (file_exists($LIVEMEMORY)) {
     if (isset($argv[1]) && isset($array['UTC'])) {
         if ($argv[1] == '-peak') {
             if ($nowutc - $array['UTC'] < 5 && $array["${'METNAME'.$METNUM}$METNUM"] > $previous['max']) { // peak
-                $previous['max'] = $array["${'METNAME'.$METNUM}$METNUM"];
+				$previous['max'] = $array["${'METNAME'.$METNUM}$METNUM"];
 				$previous['tmax'] = $nowutc;
             }
             $ret = $previous['max'];
             echo "$INDID($ret*W)";
         } elseif ($argv[1] == '-low') {
             if (($nowutc - $array['UTC'] < 5 && $array["${'METNAME'.$METNUM}$METNUM"] < $previous['low'] && $array["${'METNAME'.$METNUM}$METNUM"] > 0) || !isset($previous['low'])) { // low
-                $previous['low'] = $array["${'METNAME'.$METNUM}$METNUM"];
+				$previous['low'] = $array["${'METNAME'.$METNUM}$METNUM"];
 				$previous['tlow'] = $nowutc;
             }
             $ret = $previous['low'];
