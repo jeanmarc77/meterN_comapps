@@ -52,11 +52,11 @@ if (file_exists($LIVEMEMORY)) {
         $previous['max'] = $array["${'METNAME'.$METNUM}$METNUM"];
         $previous['low'] = $array["${'METNAME'.$METNUM}$METNUM"];
         }*/
-        if ($previous['tmax'] > $nowutc + 86400) { // Clear value over 24h
+        if ($nowutc > $previous['tmax'] + 86400) { // Clear value over 24h
             $previous['tmax'] = $nowutc;
             $previous['max']  = $array["${'METNAME'.$METNUM}$METNUM"];
         }
-        if ($previous['tlow'] > $nowutc + 86400) {
+        if ($nowutc > $previous['tlow'] + 86400) {
             $previous['tlow'] = $nowutc;
             $previous['low']  = $array["${'METNAME'.$METNUM}$METNUM"];
         }
@@ -67,7 +67,12 @@ if (file_exists($LIVEMEMORY)) {
         if (file_exists($prevfile)) {
             $data     = file_get_contents($prevfile);
             $previous = json_decode($data, true);
-            print_r($previous);
+            //print_r($previous);
+            $llow   = date('d/m/Y H:i', $previous['tlow']);
+            $lmax   = date('d/m/Y H:i', $previous['tmax']);
+            $max = $previous['max'];
+            $low = $previous['low'];
+            echo "Peak power : $max W $lmax, Lower : $low W $llow";
         }
     }
 }
