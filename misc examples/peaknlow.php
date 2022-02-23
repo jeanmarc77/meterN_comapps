@@ -1,6 +1,6 @@
 #!/usr/bin/php
 <?php
-// A simple script to return peak power and lower power of the last 24h hours.
+// A simple script to return daily peak and lower power.
 // Use as indicator
 
 $MNDIR  = '/srv/http/metern'; // Path to meterN
@@ -27,7 +27,8 @@ if (file_exists($prevfile)) {
 }
 
 if (file_exists($LIVEMEMORY)) {
-    $data   = file_get_contents($LIVEMEMORY);
+	$data         = file_get_contents($LIVEMEMORY);
+	$memarray1st  = $data;
     $array  = json_decode($data, true);
     $nowutc = strtotime(date('Ymd H:i:s'));
     
@@ -47,21 +48,16 @@ if (file_exists($LIVEMEMORY)) {
             $ret = $previous['low'];
             echo "$INDID($ret*W)";
         }
-        /*
         if (date('H') == 0 && date('i') == 0) { // Clear at midnight
         $previous['max'] = $array["${'METNAME'.$METNUM}$METNUM"];
+		$previous['tmax'] = $nowutc;
         $previous['low'] = $array["${'METNAME'.$METNUM}$METNUM"];
-        }*/
-        if ($nowutc > $previous['tmax'] + 86400) { // Clear value over 24h
-            $previous['tmax'] = $nowutc;
-            $previous['max']  = $array["${'METNAME'.$METNUM}$METNUM"];
-        }
-        if ($nowutc > $previous['tlow'] + 86400) {
-            $previous['tlow'] = $nowutc;
-            $previous['low']  = $array["${'METNAME'.$METNUM}$METNUM"];
+		$previous['tlow'] = $nowutc;
         }
         $prevdata = json_encode($previous);
-        file_put_contents($prevfile, $prevdata);
+		if ($prevdata != $memarray1st) { // Reduce write
+			file_put_contents($MEMORY, $data);
+		}
     } else {
         echo "Usage: peaknlow { peak | low }\n";
         if (file_exists($prevfile)) {
