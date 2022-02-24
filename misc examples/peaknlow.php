@@ -28,7 +28,7 @@ if (file_exists($prevfile)) {
 
 if (file_exists($LIVEMEMORY)) {
 	$data         = file_get_contents($LIVEMEMORY);
-	$memarray1st  = $data;
+	$memarray1st  = file_get_contents($prevfile);
     $array  = json_decode($data, true);
     $nowutc = strtotime(date('Ymd H:i:s'));
     
@@ -56,7 +56,7 @@ if (file_exists($LIVEMEMORY)) {
         }
         $prevdata = json_encode($previous);
 		if ($prevdata != $memarray1st) { // Reduce write
-			file_put_contents($MEMORY, $data);
+			file_put_contents($prevfile, $prevdata);
 		}
     } else {
         echo "Usage: peaknlow { peak | low }\n";
