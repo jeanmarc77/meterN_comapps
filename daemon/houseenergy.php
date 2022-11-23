@@ -9,7 +9,7 @@
 //                                     +-------------+
 //                consumption/selfconsumuption (*)
 //
-// ln -s /srv/http/comapps/houseenergy.php /usr/bin/houseenergy and chmod +x houseenergy.php
+// ln -s /srv/http/comapps/daemon/houseenergy.php /usr/bin/houseenergy and chmod +x houseenergy.php
 //
 // The house virtual meter should be configured in mN as 'Elect House consumption' type with a passover value like 100000.
 // The house self consumuption meter as 'Elect Other' also with a passover value like 100000.
@@ -18,8 +18,10 @@ if (isset($_SERVER['REMOTE_ADDR'])) {
     die('Direct access not permitted');
 }
 if (!file_exists('/dev/shm/sdm_log.txt')) {
-    usleep(500);
-    die('sdm_log.txt does not exist yet');
+    sleep(2);
+    if (!file_exists('/dev/shm/sdm_log.txt')) {
+	    die('sdm_log.txt does not exist yet');
+    }
 }
 //// Set the 2 virtual meters ////
 // Consumption
@@ -38,25 +40,25 @@ $PRODmetnum   = 4; // meter number
 
 // TOT return the total power (eg if import = 45W, export -55W)
 $TPID        = '1_P';
-$TOTPOWERcmd = 'cat /dev/shm/sdm_log.txt | egrep "^1_P\(" | grep "*W)"';
+$TOTPOWERcmd = 'cat /dev/shm/sdm_log.txt | grep -E "^1_P\(" | grep "*W)"';
 
 // Energy Imported
 $IMPID     = '1_IE';
-$IMPcmd    = 'cat /dev/shm/sdm_log.txt | egrep "^1_IE\(" | grep "*Wh)"';
+$IMPcmd    = 'cat /dev/shm/sdm_log.txt | grep -E "^1_IE\(" | grep "*Wh)"';
 $IMPmetnum = 5;
 
 // Energy Exported
 $EXPID     = '1_EE';
-$EXPcmd    = 'cat /dev/shm/sdm_log.txt | egrep "^1_EE\(" | grep "*Wh)"';
+$EXPcmd    = 'cat /dev/shm/sdm_log.txt | grep -E "^1_EE\(" | grep "*Wh)"';
 $EXPmetnum = 6;
 
 //// Indicators ////
 $VOLTID  = '1_V';
-$VOLTcmd = 'cat /dev/shm/sdm_log.txt | egrep "^1_V\(" | grep "*V)"';
+$VOLTcmd = 'cat /dev/shm/sdm_log.txt | grep -E "^1_V\(" | grep "*V)"';
 $FRQID   = '1_F';
-$FRQcmd  = 'cat /dev/shm/sdm_log.txt | egrep "^1_F\(" | grep "*Hz)"';
+$FRQcmd  = 'cat /dev/shm/sdm_log.txt | grep -E "^1_F\(" | grep "*Hz)"';
 $COSID   = '1_PF';
-$COScmd  = 'cat /dev/shm/sdm_log.txt | egrep "^1_PF\(" | grep "*F)"';
+$COScmd  = 'cat /dev/shm/sdm_log.txt | grep -E "^1_PF\(" | grep "*F)"';
 
 // Path to metern
 $MNDIR    = '/srv/http/metern';
