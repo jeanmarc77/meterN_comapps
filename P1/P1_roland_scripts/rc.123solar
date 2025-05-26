@@ -1,0 +1,125 @@
+#!/bin/bash
+
+
+if [ "${1}" = "stop" -o "${1}" = "restart" ]
+then
+  echo "Stopping metern ..."
+  # OLD /var/www/metern/scripts/metern.sh stop
+  kill $(ps -ef|grep "metern.php"|grep -v grep|awk '{print $2}') >/dev/null 2>&1
+  echo "Stopping p1_daemon ..."
+  kill $(ps -ef|grep p1_daemon|grep -v grep|awk '{print $2}') >/dev/null 2>&1
+  # OLD /var/www/123solar/scripts/123solar.sh stop 
+  echo "Stopping 123solar ..."
+  kill $(ps -ef|grep "123solar.php"|grep -v grep|awk '{print $2}') >/dev/null 2>&1
+  echo "Stopping sma_get daemon ..."
+  su  www-data -c "/usr/bin/sma_get -x"
+fi
+if [ "${1}" = "start" -o "${1}" = "restart" ]
+then
+  DEVS=$(lsusb|egrep "Cypress|FT232|PL2303"|wc -l)
+  if [ "${DEVS}" -lt "3" ]
+  then
+    echo "Found devices:"
+    lsusb|egrep "Cypress|FT232|PL2303"
+    echo "ERROR: not all devices found, try to attach ... "
+    (
+      ssh kvm /usr/bin/virsh attach-device monitor /usr/local/bin/usb_dev_Cypress.xml  
+      ssh kvm /usr/bin/virsh attach-device monitor /usr/local/bin/usb_dev_FT232.xml  
+      ssh kvm /usr/bin/virsh attach-device monitor /usr/local/bin/usb_dev_PL2303.xml
+    ) 2>&1 |grep successfully
+
+    sleep 10
+    DEVS=$(lsusb|egrep "FT232|PL2303"|wc -l)
+    if [ "${DEVS}" -lt "2" ]
+    then
+      echo "ERROR: 123solar not started, not all devices found :"
+      /usr/local/bin/pushover.sh UNIX "123solar NOT started, no devices"
+      echo "Found devices:"
+      lsusb|egrep "Cypress|FT232|PL2303"
+      exit 1
+    fi
+  fi
+  echo "Found devices:"
+  lsusb|egrep "Cypress|FT232|PL2303"
+
+  /usr/local/bin/set_ttyusb_link.sh
+  stty -F /dev/ttyUSBsl 1200
+  /bin/setserial -z /dev/ttyUSBsl
+
+  if [ -z "$(ps -ef|grep p1_daemon|grep -v grep)" ]
+  then
+    echo "Start p1 daemon ..."
+    nohup /usr/local/bin/p1_daemon.sh >/dev/null 2>&1 &
+  else
+    echo "p1 daemon already running"
+  fi
+  rm -f /var/lock/LCK*
+  echo "Start sma daemon ..."
+  #rm -f /var/tmp/sma_get_socket # only after user change
+  su www-data -c "nohup /usr/bin/sma_get -D -n0 > /dev/null 2>&1 &"
+  # su www-data -c "nohup /usr/bin/sma_get -D -n0 b > /var/log/sma_get_daemon.debug 2>&1 &"
+  sleep 3 # dont start sma_get data request to quick after starting the daemon
+  echo "Start 123solar ..."
+  # OLD /var/www/123solar/scripts/123solar.sh start 
+  STARTED=0
+  while [ "${STARTED}" == "0" ]
+  do
+    /usr/bin/curl http://localhost:/scripts/boot123s.php
+    if [ ! -z "$(ps -ef|grep '123solar.php'|grep -v grep)" ]
+    then
+      STARTED=1
+    else
+      sleep 3
+      echo "123solar not started, retry ..."
+    fi
+  done
+  echo "Start metern ..."
+  # OLD /var/www/metern/scripts/metern.sh start
+  STARTED=0
+  while [ "${STARTED}" == "0" ]
+  do
+    /usr/bin/curl http://localhost/metern/scripts/bootmn.php
+    if [ ! -z "$(ps -ef|grep 'metern.php'|grep -v grep)" ]
+    then
+      STARTED=1
+    else
+      sleep 3
+      echo "metern not started, retry ..."
+    fi
+  done
+fi
+if [ "${1}" = "status" ]
+then
+  echo "Daemon status for:"
+  printf "%16s : " "123solar" 
+  if [ ! -z "$(ps -ef|grep '123solar.php'|grep -v grep)" ]
+  then
+    echo OK
+  else
+    echo DOWN 
+  fi
+  printf "%16s : " "sma_get Daemon" 
+  if [ ! -z "$(ps -ef|grep 'sma_get -D'|grep -v grep)" ]
+  then
+    echo OK
+  else
+    echo DOWN 
+  fi
+  printf "%16s : " "metern" 
+  # OLD if [ ! -z "$(ps -ef|grep 'mn_worker'|grep -v grep)" ]
+  if [ ! -z "$(ps -ef|grep 'metern.php'|grep -v grep)" ]
+  then
+    echo OK
+  else
+    echo DOWN 
+  fi
+  printf "%16s : " "P1 Daemon" 
+  if [ ! -z "$(ps -ef|grep 'p1_daemon'|grep -v grep)" ]
+  then
+    echo OK
+  else
+    echo DOWN 
+  fi
+  echo "Found devices:"
+  lsusb|egrep "Cypress|FT232|PL2303"
+fi
